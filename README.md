@@ -23,12 +23,18 @@ Open them from the plugin list in Pulsar.
 
 ![Settings Menu](images/settings.jpg)
 
-| Enabled | Turn the plugin on or off |
-| Pick key | The key combination, can be re-bound |
-| Pick color | Also pick the paint color of the block |
-| Add missing color | Add the color to your palette if it is not there (replaces the currently selected palette color) |
-| Equip without toolbar | Hold the block without selecting or adding it on the build bar |
-| Show messages | Show small on-screen notices (for example "Block picked") |
+| Enabled | Turn the plugin on or off 
+
+| Pick key | The key combination, can be re-bound 
+
+| Pick color | Also pick the paint color of the block 
+
+| Add missing color | Add the color to your palette if it is not there (replaces the currently selected palette color) 
+
+| Equip without toolbar | Hold the block without selecting or adding it on the build bar 
+
+| Show messages | Show small on-screen notices (for example "Block picked") 
+
 
 ## Install
 
