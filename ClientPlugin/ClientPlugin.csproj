@@ -19,7 +19,7 @@
     </PropertyGroup>
 
     <PropertyGroup>
-        <AssemblyName>ClientPluginTemplate</AssemblyName>
+        <AssemblyName>BlockPicker</AssemblyName>
     </PropertyGroup>
 
     <Target Name="Verify" BeforeTargets="PrepareForBuild">

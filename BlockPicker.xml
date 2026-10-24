@@ -9,7 +9,8 @@
 
 Hold any block, aim at a block (built or projected) and press the keybind (default: Ctrl+G) to pick it.
 The block is selected on your build bar (added to a free slot if needed), and its paint color can be picked too.
-Respects survival progression. Everything is configurable in the plugin settings.</Description>
+Respects survival progression. 
+Everything is configurable in the plugin settings.</Description>
     <SourceDirectories>
         <Directory>ClientPlugin</Directory>
     </SourceDirectories>

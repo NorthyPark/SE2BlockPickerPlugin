@@ -14,7 +14,7 @@ public class Config : INotifyPropertyChanged
     private bool enabled = true;
     private bool showMessages = true;
     private bool pickColor = true;
-    private bool addMissingColor = true;
+    private bool addMissingColor = false;
     private bool equipWithoutToolbar = false;
     // 0x47 = the G key. Default is Ctrl + G.
     private Binding pickKey = new Binding(0x47, ctrl: true);

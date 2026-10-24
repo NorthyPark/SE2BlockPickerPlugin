@@ -17,6 +17,7 @@ using Keen.Game2.Simulation.GameSystems.BlockPlacement;
 using Keen.Game2.Simulation.GameSystems.BlockPlacement.Projections;
 using Keen.VRage.Library.Mathematics;
 using Keen.Game2.Simulation.GameSystems.Toolbars;
+using Keen.Game2.Simulation.StreamedUI.Categories;
 using Keen.Game2.Simulation.WorldObjects.CubeBlocks;
 using Keen.VRage.Core.Game.Components;
 using Keen.VRage.Core.Game.Systems;
@@ -51,17 +52,9 @@ public static class BlockPickerPatch
     // Reflection results are looked up once, not on every key press.
     private static readonly FieldInfo PaintDataField = AccessTools.Field(typeof(BlockPlacerEntityComponent), "_paintData");
     private static readonly FieldInfo PlacerDataField = AccessTools.Field(typeof(BlockPlacerEntityComponent), "_placerData");
-    private static readonly FieldInfo[] ColorFloatFields = typeof(ColorHSV)
-        .GetFields(BindingFlags.Public | BindingFlags.Instance).Where(x => x.FieldType == typeof(float)).ToArray();
-    private static readonly PropertyInfo[] ColorFloatProps = typeof(ColorHSV)
-        .GetProperties(BindingFlags.Public | BindingFlags.Instance)
-        .Where(x => x.PropertyType == typeof(float) && x.GetIndexParameters().Length == 0).ToArray();
-
     // Aimed block definition -> build bar version of that block (found once, then reused).
     private static readonly Dictionary<object, EntityCompositeDefinition> CompositeCache =
         new Dictionary<object, EntityCompositeDefinition>(ReferenceEqualityComparer.Instance);
-    private static Type blockKindType;
-    private static bool compositeSearchLogged;
 
     // Selection waiting for the server to deliver a newly added tile.
     private static ToolbarSelection? pendingSlot;
@@ -198,28 +191,14 @@ public static class BlockPickerPatch
         }
     }
 
-    // Colors count as equal when all their numeric parts are within a tiny tolerance.
+    // Colors count as equal when all their parts are within a tiny tolerance.
     private static bool ColorsClose(ColorHSV a, ColorHSV b)
     {
-        if (a.Equals(b))
-            return true;
-
-        var any = false;
-        foreach (var field in ColorFloatFields)
-        {
-            any = true;
-            if (Math.Abs((float)field.GetValue(a) - (float)field.GetValue(b)) > 0.01f)
-                return false;
-        }
-
-        foreach (var prop in ColorFloatProps)
-        {
-            any = true;
-            if (Math.Abs((float)prop.GetValue(a) - (float)prop.GetValue(b)) > 0.01f)
-                return false;
-        }
-
-        return any;
+        const double tolerance = 0.01;
+        return Math.Abs((double)a.H - (double)b.H) <= tolerance
+            && Math.Abs((double)a.S - (double)b.S) <= tolerance
+            && Math.Abs((double)a.V - (double)b.V) <= tolerance
+            && Math.Abs((double)a.A - (double)b.A) <= tolerance;
     }
 
     // Same block definition? Reference first; projections may carry another instance of the same definition.
@@ -454,69 +433,24 @@ public static class BlockPickerPatch
         if (CompositeCache.TryGetValue(wanted, out var cached))
             return cached;
 
-        const BindingFlags flags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance;
         try
         {
-            blockKindType ??= AppDomain.CurrentDomain.GetAssemblies()
-                .SelectMany(a => { try { return a.GetTypes(); } catch { return Type.EmptyTypes; } })
-                .FirstOrDefault(x => x.Name == "BlockKindDefinition");
-            if (blockKindType == null)
+            foreach (var kind in Singleton<DefinitionManager>.Instance.GetDefinitionsOfType<BlockKindDefinition>())
             {
-                Log.Default.WriteLine($"[{Plugin.Name}] BlockKindDefinition type not found");
-                return null;
-            }
-
-            var manager = Singleton<DefinitionManager>.Instance;
-            var managerType = manager.GetType();
-            foreach (var m in managerType.GetMethods(flags))
-            {
-                if (!m.Name.Contains("Definitions") && !m.Name.Contains("GetAll"))
-                    continue;
-
-                IEnumerable list = null;
-                try
+                foreach (var composite in kind.Blocks)
                 {
-                    var ps = m.GetParameters();
-                    if (m.IsGenericMethodDefinition && m.GetGenericArguments().Length == 1 && ps.Length == 0)
-                        list = m.MakeGenericMethod(blockKindType).Invoke(manager, null) as IEnumerable;
-                    else if (!m.IsGenericMethodDefinition && ps.Length == 1 && ps[0].ParameterType == typeof(Type))
-                        list = m.Invoke(manager, new object[] { blockKindType }) as IEnumerable;
-                }
-                catch (Exception e)
-                {
-                    Log.Default.WriteLine($"[{Plugin.Name}] {m.Name} failed: {e.Message}");
-                }
-
-                if (list == null)
-                    continue;
-
-                foreach (var kind in list)
-                {
-                    var blocksProp = kind?.GetType().GetProperty("Blocks", flags);
-                    if (!(blocksProp?.GetValue(kind) is IEnumerable blocks))
-                        continue;
-                    foreach (var item in blocks)
+                    if (composite != null &&
+                        SameBlock(composite.Definition<CubeBlockComponent, CubeBlockDefinition>(), wanted))
                     {
-                        if (item is EntityCompositeDefinition c &&
-                            SameBlock(c.Definition<CubeBlockComponent, CubeBlockDefinition>(), wanted))
-                        {
-                            CompositeCache[wanted] = c;
-                            return c;
-                        }
+                        CompositeCache[wanted] = composite;
+                        return composite;
                     }
                 }
-            }
-
-            if (!compositeSearchLogged)
-            {
-                compositeSearchLogged = true;
-                Log.Default.WriteLine($"[{Plugin.Name}] Composite not found. DefinitionManager methods: " +
-                    string.Join(" | ", managerType.GetMethods(flags).Select(x => x.ToString()).Distinct()));
             }
         }
         catch (Exception e)
         {
-            Log.Default.WriteLine($"[{Plugin.Name}] Composite search failed: {e}");
+            Log.Default.WriteLine(LogSeverity.Error, $"[{Plugin.Name}] Composite search failed: {e}");
         }
 
         return null;
