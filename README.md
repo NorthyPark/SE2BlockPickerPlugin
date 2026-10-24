@@ -42,15 +42,13 @@ Open them from the plugin list in Pulsar.
 2. Open the plugin list in Pulsar, find **Block Picker by NorthyPark** and enable it.
 3. Restart the game when Pulsar asks.
 
-Pulsar compiles the plugin on your own computer, so there is nothing to download separately.
-
-## Reporting problems
+## Got any problems?
 
 Open an issue on this repository and attach Pulsar's `info.log` and the game log.
 
 ## Credits, license and Disclaimers
 
-Claude AI was used to make the code, as I do not have the technical still at the moment to make this myself within a resonable timeframe. 
+Claude AI was used to make the code, as I do not have the technical skill at the moment to make this myself within a reasonable time-frame. 
 
 Built from the [CometWorks client2 plugin template](https://github.com/CometWorks/client2-plugin-template). MIT license, see `LICENSE`.
 
